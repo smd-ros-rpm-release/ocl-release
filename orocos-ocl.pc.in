@@ -1,0 +1,9 @@
+prefix=@CMAKE_INSTALL_PREFIX@
+libdir=${prefix}/lib/orocos
+includedir=${prefix}/include/orocos
+
+Name: orocos-ocl
+Description: Orocos Component Library
+Requires: orocos-ocl-deployment orocos-ocl-logging orocos-ocl-taskbrowser
+Version: @OCL_VERSION@
+Cflags: -I${includedir}

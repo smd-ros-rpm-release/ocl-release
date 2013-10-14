@@ -1,0 +1,55 @@
+
+--- Property methods and functions. 
+--  Properties can be created using the syntax
+-- <code>rtt.Property('type')</code> Like Ports, Properties are not
+-- automatically garbage collected, so they must be manually removed
+-- from the TaskContext(s) they were added to and the delete method
+-- must be called on them.  Moreover, Properties behave much like
+-- Variables in that Properties holding complex RTT types (types with
+-- subfields) can be indexed directly using dot notation, as for
+-- instance: <code>propA.subfield1</code> etc.
+
+module 'rtt.Property'
+
+--- Property constructor.
+-- Note: the more intuitve syntax <code>rtt.Property('type')</code>
+-- is preferred.
+-- @param type type of Property to create
+-- @param name (optional) name of property
+-- @param desc (optional) description of property
+function new(type, name, desc)
+
+--- Get the Variable contained in a Property
+-- Note: this method is only needed for Properties containing basic
+-- types. Complex Properties (Properties which have subfields) can be
+-- accesses and assigned by using the dot notation 
+-- @return Variable
+function get()
+
+--- Get the Variable contained in a Property
+-- as above, but will not convert basic types to Lua.
+-- @return Variable
+function getRaw()
+
+--- Set the value of a Property to a new value.
+-- Note: this method is only needed for Properties containing basic
+-- types. Complex Properties (Properties which have subfields) can be
+-- accesses and assigned by using the dot notation 
+-- @param variable value to which the property shall be set.
+-- @return true in case of success
+function set(variable)
+
+--- Return information about a property.
+-- The information is stored in a table with the fields:<br><br>
+-- <code>   name</code>: name of port<br>
+-- <code>   desc</code>: description of port<br>
+-- <code>   type</code>: type of port<br>
+-- @return table with above fields.
+function info()
+
+
+--- Delete a Property.
+-- This frees the memory and makes the Property inaccessible from
+-- Lua. Make sure that the Property was removed from all TaskContexts
+-- before calling this.
+function delete()

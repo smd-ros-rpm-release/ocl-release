@@ -1,0 +1,74 @@
+// Copyright (C) 2006 Ruben Smits <ruben dot smits at mech dot kuleuven dot be>
+//  
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; either version 2 of the License, or
+// (at your option) any later version.
+//  
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//  
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software
+// Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+//  
+
+/** 
+* \mainpage Orocos Component Library
+*
+* \section intro Introduction
+*
+* This project consists of a series of standard Orocos
+* components which are used to build control applications.
+* 
+* \section deps Dependencies
+*
+* Some Orocos Components requires a number of libraries in order
+* to build. These are:
+*
+* - Every component requires the Real-Time Toolkit (RTT).
+* - ncurses and readline for the OCL::TaskBrowser
+*
+* \section structure Structure:
+*
+* \subsection hello Hello World:
+* The OCL::HelloWorld component demonstrates the TaskContext interface
+* and how it can be used in applications.
+* 
+* \subsection reporting Reporting:
+* 	Components for real-time data capturing. Currently console
+* 	and file reporting is supported.
+*   <ul>
+*   <li>OCL::NetcdfReporting
+*   <li>OCL::ReportingComponent
+*   <li>OCL::ConsoleReporting
+*   <li>OCL::FileReporting
+*   </ul>
+* \subsection taskbrowser Taskbrowser:
+* 	A Component for online interaction with any other component.
+* 	Your main tool during component development, testing or
+* 	experimenting.
+*   <ul>
+*   <li>OCL::TaskBrowser
+*   </ul>
+*
+* \subsection deployment Component Deployment:
+* 	Component for loading and configuring components into an
+*       application.
+*   <ul>
+*   <li>OCL::DeploymentComponent
+*   <li>OCL::CorbaDeploymentComponent
+*   </ul>
+*                                                               
+* \subsection logging Logging Compnent:
+* 	Component for capturing real-time logging and two components for 
+*       creating log files: one to a file and one to standard output.
+*   <ul>
+*   <li>OCL::LoggingService
+*   <li>OCL::FileAppender
+*   <li>OCL::ConsoleAppender
+*   </ul>
+*
+*/
