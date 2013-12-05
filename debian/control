@@ -1,0 +1,12 @@
+Source: ros-hydro-ocl
+Section: misc
+Priority: extra
+Maintainer: OCL Development Team <orocos-dev@lists.mech.kuleuven.be>
+Build-Depends: debhelper (>= 7.0.50~), cmake, liblua5.1-0-dev, libncurses5-dev, libnetcdf-dev, libreadline-dev, ros-hydro-log4cpp, ros-hydro-rtt
+Homepage: http://www.orocos.org/ocl
+Standards-Version: 3.9.2
+
+Package: ros-hydro-ocl
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, liblua5.1-0-dev, libncurses5-dev, libnetcdf-dev, libreadline-dev, ros-hydro-catkin, ros-hydro-log4cpp, ros-hydro-rtt
+Description: Orocos component library This package contains standard components for the Orocos Toolchain
