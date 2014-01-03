@@ -241,3 +241,9 @@ INCLUDE(config/cmake_logging.cmake)
 ENDIF( DISPLAY_FLAGS )
 
 INSTALL(FILES package.xml DESTINATION share/ocl)
+
+# Install an env-hook if catkin is found
+find_package(catkin)
+if(catkin_FOUND)
+  catkin_add_env_hooks(00.ocl-lua SHELLS sh DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/env-hooks)
+endif()
