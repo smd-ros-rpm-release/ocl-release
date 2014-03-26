@@ -72,6 +72,7 @@
 #include <rtt/plugin/PluginLoader.hpp>
 #include <rtt/internal/GlobalService.hpp>
 #include <rtt/types/GlobalsRepository.hpp>
+#include <rtt/internal/GlobalEngine.hpp>
 #include <boost/algorithm/string.hpp>
 
 #include <iostream>
@@ -99,7 +100,6 @@
 #ifdef USE_READLINE
 # ifdef USE_EDITLINE
 #  include <editline/readline.h>
-#  include <editline/history.h>
 # else
 #  include <readline/readline.h>
 #  include <readline/history.h>
@@ -291,7 +291,7 @@ namespace OCL
                      completes.push_back( path + *i + ".");
                 else
                     if ( startpos == std::string::npos || startpos+1 == line.length() || i->find( line.substr(startpos+1)) == 0 )
-                        completes.push_back( path + *i );
+                        completes.push_back( *i );
             }
             // Stop here if 'cd'
             if (line.find(std::string("cd ")) == 0)
@@ -302,12 +302,12 @@ namespace OCL
                 std::string path;
                 if ( !( pos+1 > startpos) )
                     path = line.substr(pos+1, startpos - pos);
-                //cerr << "path :"<<path<<endl;
+                //cerr << "provider:"<< *i << ", path :"<<path<<endl;
                 if ( *i == line.substr(startpos+1) )
                      completes.push_back( path + *i + ".");
                 else
                     if ( startpos == std::string::npos || startpos+1 == line.length() || i->find( line.substr(startpos+1)) == 0 )
-                        completes.push_back( path + *i );
+                        completes.push_back( *i );
             }
             return; // do not add component names.
         }
@@ -492,7 +492,7 @@ namespace OCL
         // complete on types:
         bool try_deeper = false;
         try {
-            Parser parser;
+            Parser parser(GlobalEngine::Instance());
             DataSourceBase::shared_ptr result = parser.parseExpression( peerpath + component_found, context );
             if (result && !component.empty() ) {
                 vector<string> members = result->getMemberNames();
@@ -509,7 +509,7 @@ namespace OCL
         // go a level deeper again.
         if (try_deeper) {
             try {
-                Parser parser;
+                Parser parser(GlobalEngine::Instance());
                 DataSourceBase::shared_ptr result = parser.parseExpression( peerpath + component, context );
                 if (result && !component.empty() ) {
                     vector<string> members = result->getMemberNames();
@@ -546,7 +546,7 @@ namespace OCL
                 std::string item = to_parse.substr(startpos, endpos);
 
                 if ( taskobject->hasService( item ) ) {
-                    taskobject = peer->provides(item);
+                    taskobject = taskobject->provides(item);
                     itemfound = true;
                 } else
                     if ( peer->hasPeer( item ) ) {
@@ -651,6 +651,7 @@ namespace OCL
         rl_completion_append_character = '\0'; // avoid adding spaces
         rl_attempted_completion_function = &TaskBrowser::orocos_hmi_completion;
 
+        using_history();
         if ( read_history(".tb_history") != 0 ) {
             read_history("~/.tb_history");
         }
@@ -713,8 +714,10 @@ namespace OCL
     {
         string::size_type pos1 = str.find_first_not_of(to_trim);
         string::size_type pos2 = str.find_last_not_of(to_trim);
-        str = str.substr(pos1 == string::npos ? 0 : pos1,
-                         pos2 == string::npos ? str.length() - 1 : pos2 - pos1 + 1);
+        if (pos1 == string::npos) 
+            str.clear(); // nothing else present
+        else
+            str = str.substr(pos1, pos2 - pos1 + 1);
     }
 
 
@@ -820,6 +823,7 @@ namespace OCL
                 } else if ( command.find("ls") == 0 ) {
                     std::string::size_type pos = command.find("ls")+2;
                     command = std::string(command, pos, command.length());
+                    str_trim( command, ' ');
                     printInfo( command );
                 } else if ( command == "" ) { // nop
                 } else if ( command.find("cd ..") == 0  ) {
@@ -1087,8 +1091,11 @@ namespace OCL
                 log(Debug) <<"No such peer : "<< c <<endlog();
                 return 0;
             }
+        if ( !pp.foundPath() ) {
+                log(Debug) <<"No such peer : "<< c <<endlog();
+                return 0;
+            }
         taskobject = pp.taskObject();
-        assert(taskobject);
         peer = pp.peer();
         return pp.peer();
     }
@@ -1331,7 +1338,7 @@ namespace OCL
     bool TaskBrowser::printService( string name ) {
     	bool result = false;
         Service::shared_ptr ops = stringToService(name);
-        ServiceRequester* sr = 0;
+        ServiceRequester::shared_ptr sr;
 
         if ( ops || GlobalService::Instance()->hasService( name ) ) // only object name was typed
             {
@@ -1383,7 +1390,7 @@ namespace OCL
 	    // Set caller=0 to have correct call/send semantics.
         // we're outside the updateHook(). Passing 'this' would
         // trigger the EE of the TB, but not our own function.
-        scripting::Parser _parser( 0 );
+        scripting::Parser _parser( GlobalEngine::Instance() );
 
         if (debug)
             cerr << "Trying ValueStatement..."<<nl;
@@ -1862,7 +1869,8 @@ namespace OCL
     {
         // this sets this->peer to the peer given
         peer = context;
-        if ( this->findPeer( peerp+"." ) == 0 ) {
+        taskobject = peer->provides();
+        if ( !peerp.empty() && peerp != "." && this->findPeer( peerp+"." ) == 0 ) {
             cerr << "No such peer or object: " << peerp << endl;
             return;
         }
