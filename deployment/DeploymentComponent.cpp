@@ -391,7 +391,7 @@ namespace OCL
     	return ret;
     }
 
-    ServiceRequester* DeploymentComponent::stringToServiceRequester(string const& names) {
+    ServiceRequester::shared_ptr DeploymentComponent::stringToServiceRequester(string const& names) {
         std::vector<std::string> strs;
         boost::split(strs, names, boost::is_any_of("."));
 
@@ -400,10 +400,10 @@ namespace OCL
             log(Error) << "No such component: '"<< component <<"'" <<endlog();
             if ( names.find('.') != string::npos )
                 log(Error)<< " when looking for service '" << names <<"'" <<endlog();
-            return NULL;
+            return ServiceRequester::shared_ptr();
         }
         // component is peer or self:
-        ServiceRequester* ret = (component != this->getName() ? getPeer(component)->requires() : this->requires());
+        ServiceRequester::shared_ptr ret = (component != this->getName() ? getPeer(component)->requires() : this->requires());
 
         // remove component name:
         strs.erase( strs.begin() );
@@ -591,7 +591,7 @@ namespace OCL
         std::string reqs_name(required.begin(), reqs.begin());
         std::string rop_name(reqs.begin()+1, required.end());
         log(Debug) << "Looking for required operation " << rop_name << " in service " << reqs_name << endlog();
-        ServiceRequester* r = this->stringToServiceRequester(reqs_name);
+        ServiceRequester::shared_ptr r = this->stringToServiceRequester(reqs_name);
         // Provided service
         boost::iterator_range<std::string::const_iterator> pros = boost::algorithm::find_last(provided, ".");
         std::string pros_name(provided.begin(), pros.begin());
@@ -1112,10 +1112,41 @@ namespace OCL
                                         } else
                                             if ( nm.rvalue().getType() == "SequentialActivity" ) {
                                                 this->setNamedActivity(comp.getName(), nm.rvalue().getType(), 0, 0, 0 );
-                                            } else {
-                                                log(Error) << "Unknown activity type: " << nm.rvalue().getType()<<endlog();
-                                                valid = false;
-                                            }
+											} else
+                                                if ( nm.rvalue().getType() == "FileDescriptorActivity" ) {
+                                                    RTT::Property<double> per = nm.rvalue().getProperty("Period");
+                                                    if ( !per.ready() ) {
+                                                        per = Property<double>("p","",0.0); // default to 0.0
+                                                    }
+                                                    // else ignore as is optional
+
+                                                    RTT::Property<int> prio = nm.rvalue().getProperty("Priority");
+                                                    if ( !prio.ready() ) {
+                                                        log(Error)<<"Please specify priority <short> of FileDescriptorActivity."<<endlog();
+                                                        valid = false;
+                                                    }
+
+                                                    unsigned int cpu_affinity = ~0; // default to all CPUs
+                                                    RTT::Property<unsigned int> cpu_affinity_prop = nm.rvalue().getProperty("CpuAffinity");
+                                                    if(cpu_affinity_prop.ready()) {
+                                                        cpu_affinity = cpu_affinity_prop.get();
+                                                    }
+                                                    // else ignore as is optional
+
+                                                    RTT::Property<string> sched = nm.rvalue().getProperty("Scheduler");
+                                                    int scheduler = ORO_SCHED_RT;
+                                                    if ( sched.ready() ) {
+                                                        scheduler = string_to_oro_sched( sched.get());
+                                                        if (scheduler == -1 )
+                                                            valid = false;
+                                                    }
+                                                    if (valid) {
+                                                        this->setNamedActivity(comp.getName(), nm.rvalue().getType(), per.get(), prio.get(), scheduler, cpu_affinity );
+                                                    }
+                                                } else {
+                                                    log(Error) << "Unknown activity type: " << nm.rvalue().getType()<<endlog();
+                                                    valid = false;
+                                                }
                             }
                         } else {
                             // no 'Activity' element, default to Slave:
@@ -1993,7 +2024,7 @@ namespace OCL
                         }
 			else if ( act_type == "FileDescriptorActivity") {
 				using namespace RTT::extras;
-                newact = new FileDescriptorActivity(scheduler, priority, 0);
+                newact = new FileDescriptorActivity(scheduler, priority, period, cpu_affinity, 0);
 				FileDescriptorActivity* fdact = dynamic_cast< RTT::extras::FileDescriptorActivity* > (newact);
 				if (fdact) fdact->setTimeout(period);
 				else newact = 0;
