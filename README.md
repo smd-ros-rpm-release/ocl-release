@@ -1,3 +1,22 @@
+## ocl (hydro) - 2.7.0-4
+
+User `meyer@fliegtfix` released the packages in the `ocl` repository into the `hydro` distro by running `/usr/bin/bloom-release --track hydro --ros-distro hydro ocl` on `Wed, 26 Mar 2014 21:41:58 -0000`
+
+The `ocl` package was released.
+
+Version of package(s) in repository `ocl`:
+- rosdistro version: `2.7.0-3`
+- old version: `2.7.0-3`
+- new version: `2.7.0-4`
+
+Versions of tools used:
+- bloom version: `0.5.2`
+- catkin_pkg version: `0.1.27`
+- rosdep version: `0.10.25`
+- rosdistro version: `0.3.4`
+- vcstools version: `0.1.33`
+
+
 ## ocl - 2.7.0-3
 
 User `rsmits@im-desktop-01` released the packages in the `ocl` repository by running `/usr/bin/bloom-release -t hydro -r hydro ocl` on `Fri, 07 Feb 2014 15:00:39 -0000`
