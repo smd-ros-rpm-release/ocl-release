@@ -124,6 +124,9 @@ namespace OCL
         this->addOperation("path", &DeploymentComponent::path, this, ClientThread).doc("Add additional directories to the component search path without importing them.").arg("Paths", "A colon or semi-colon separated list of paths to search for packages.");
 
         this->addOperation("loadComponent", &DeploymentComponent::loadComponent, this, ClientThread).doc("Load a new component instance from a library.").arg("Name", "The name of the to be created component").arg("Type", "The component type, used to lookup the library.");
+        this->addOperation("configureComponent", (bool (DeploymentComponent::*)(const std::string&))&DeploymentComponent::configureComponent, this, ClientThread).doc("Configure a component who is a peer of this deployer by name.").arg("Name", "The component's name");
+        this->addOperation("startComponent", (bool (DeploymentComponent::*)(const std::string&))&DeploymentComponent::startComponent, this, ClientThread).doc("Start a component who is a peer of this deployer by name.").arg("Name", "The component's name");
+        this->addOperation("stopComponent", (bool (DeploymentComponent::*)(const std::string&))&DeploymentComponent::stopComponent, this, ClientThread).doc("Stop a component who is a peer of this deployer by name.").arg("Name", "The component's name");
         // avoid warning about overriding
         this->provides()->removeOperation("loadService");
         this->addOperation("loadService", &DeploymentComponent::loadService, this, ClientThread).doc("Load a discovered service or plugin in an existing component.").arg("Name", "The name of the component which will receive the service").arg("Service", "The name of the service or plugin.");
@@ -339,6 +342,10 @@ namespace OCL
         if (!t2) {
             log(Error)<< "No such peer: "<<to<<endlog();
             return false;
+        }
+        if ( t1->hasPeer(t2->getName()) ) {
+            log(Info) << "addPeer: "<< to << " is already a peer of " << from << endlog();
+            return true;
         }
         return t1->addPeer(t2);
     }
@@ -1235,9 +1242,14 @@ namespace OCL
                     RTT::Property<string> nm = (*it);
                     if ( nm.ready() )
                         {
-                            valid = this->addPeer( comps[comp.getName()].instance->getName(), nm.value() ) && valid;
-                            log(Info) << this->getName() << " connects " <<
-                                comps[comp.getName()].instance->getName() << " to "<< nm.value()  << endlog();
+                            if ( this->addPeer( comps[comp.getName()].instance->getName(), nm.value() ) == false ) {
+                                log(Error) << this->getName() << " can't make " << nm.value() << " a peer of " <<
+                                    comps[comp.getName()].instance->getName() << endlog();
+                                valid = false;
+                            } else {
+                                log(Info) << this->getName() << " makes " << nm.value() << " a peer of " <<
+                                    comps[comp.getName()].instance->getName() << endlog();
+                            }
                         }
                     else {
                         log(Error) << "Wrong property type in Peers struct. Expected property of type 'string',"
@@ -1407,9 +1419,13 @@ namespace OCL
                 } else {
                     log(Info) << "Setting activity of "<< comp.getName() <<endlog();
                 }
-                valid = peer->setActivity( comps[comp.getName()].act ) && valid;
-                assert( peer->engine()->getActivity() == comps[comp.getName()].act );
-                comps[comp.getName()].act = 0; // drops ownership.
+                if (peer->setActivity( comps[comp.getName()].act ) == false ) {
+                    valid = false;
+                    log(Error) << "Failed to set Activity of " << comp.getName() << endlog();
+                } else {
+                    assert( peer->engine()->getActivity() == comps[comp.getName()].act );
+                    comps[comp.getName()].act = 0; // drops ownership.
+                }
             }
 
             // Load scripts in order of appearance
@@ -1440,9 +1456,11 @@ namespace OCL
                 {
                     if( !peer->isRunning() )
                         {
-			    OperationCaller<bool(void)> peerconfigure = peer->getOperation("configure");
-                            if ( peerconfigure() == false)
+                            OperationCaller<bool(void)> peerconfigure = peer->getOperation("configure");
+                            if ( peerconfigure() == false) {
+                                log(Error) << "Component " << peer->getName() << " returns false in configure()" << endlog();
                                 valid = false;
+                            }
                         }
                     else
                         log(Warning) << "Apparently component "<< peer->getName()<< " don't need to be configured (already Running)." <<endlog();
@@ -2109,6 +2127,43 @@ namespace OCL
             } else {
                 log(Error) << "Could not cleanup Component "<< instance->getName() << " (not Stopped)"<<endlog();
                 valid = false;
+            }
+        }
+        return valid;
+    }
+
+    bool DeploymentComponent::configureComponent(RTT::TaskContext *instance)
+    {
+        RTT::Logger::In in("configureComponent");
+        bool valid = false;
+
+        if ( instance ) {
+            OperationCaller<bool(void)> instanceconfigure = instance->getOperation("configure");
+            if(instanceconfigure()) {
+                log(Info) << "Configured " << instance->getName()<<endlog();
+                valid = true;
+            }
+            else {
+                log(Error) << "Could not configure loaded Component "<< instance->getName() <<endlog();
+            }
+        }
+        return valid;
+    }
+
+    bool DeploymentComponent::startComponent(RTT::TaskContext *instance)
+    {
+        RTT::Logger::In in("startComponent");
+        bool valid = false;
+
+        if ( instance ) {
+            OperationCaller<bool(void)> instancestart = instance->getOperation("start");
+            if ( instance->isRunning() ||
+                 instancestart() ) {
+                log(Info) << "Started "<< instance->getName() <<endlog();
+                valid = true;
+            }
+            else {
+                log(Error) << "Could not start loaded Component "<< instance->getName() <<endlog();
             }
         }
         return valid;
