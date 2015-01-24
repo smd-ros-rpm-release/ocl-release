@@ -8,7 +8,7 @@ License:        LGPL v2
 URL:            http://www.orocos.org/ocl
 Source0:        %{name}-%{version}.tar.gz
 
-Requires:       lua-devel
+Requires:       compat-lua-devel
 Requires:       ncurses-devel
 Requires:       netcdf
 Requires:       readline-devel
@@ -16,7 +16,7 @@ Requires:       ros-indigo-catkin
 Requires:       ros-indigo-log4cpp
 Requires:       ros-indigo-rtt
 BuildRequires:  cmake
-BuildRequires:  lua-devel
+BuildRequires:  compat-lua-devel
 BuildRequires:  ncurses-devel
 BuildRequires:  netcdf
 BuildRequires:  readline-devel
